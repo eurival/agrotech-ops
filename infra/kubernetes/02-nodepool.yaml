@@ -1,0 +1,20 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: pool-misto # Nome do pool de máquinas
+  namespace: agrotech
+  labels:
+    strimzi.io/cluster: agro-cluster # Vincula ao cluster acima
+spec:
+  replicas: 1 # Começando com 1 nó
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 10Gi
+        class: nfs-vm-storage # Seu NFS padrão
+        deleteClaim: false

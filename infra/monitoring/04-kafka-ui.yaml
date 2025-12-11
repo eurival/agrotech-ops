@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  namespace: agrotech
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: "Agro-Cluster-Local"
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: "agro-cluster-kafka-bootstrap:9092" # Aponta pro serviço interno do Strimzi
+            - name: KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL
+              value: "PLAINTEXT"
+            # Opcional: Se quiser ver o Kafka Connect também
+            - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME
+              value: "Agro-Connect"
+            - name: KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS
+              value: "http://agro-connect-connect-api:8083"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui-svc
+  namespace: agrotech
+spec:
+  type: LoadBalancer # Se tiver MetalLB, pega IP. Se não, use NodePort.
+  selector:
+    app: kafka-ui
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30080 # Porta Fixa para acesso web
