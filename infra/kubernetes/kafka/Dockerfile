@@ -1,19 +1,22 @@
-# Usamos a mesma imagem base que estava no YAML
+# Usa a imagem base oficial do Strimzi (mesma versão do seu cluster)
 FROM quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
 
+# Muda para root para poder instalar coisas
 USER root:root
 
-# Cria a pasta de plugins
+# 1. Cria a pasta de plugins
 RUN mkdir -p /opt/kafka/plugins/mqtt
 
-# Baixa o conector Lenses (Versão 8.0 estável) e instala
-# Usando curl e unzip que geralmente já tem na base, ou instalamos se faltar
-RUN microdnf install -y unzip wget && \
-    wget -q -O /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/8.0.0/kafka-connect-mqtt-8.0.0.zip && \
+# 2. Baixa o plugin da Lenses.io (Versão 8.0)
+# Usamos curl (que vem na imagem) e tar/unzip
+RUN curl -L -o /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/8.0.0/kafka-connect-mqtt-8.0.0.zip && \
     unzip -q /tmp/plugin.zip -d /tmp/ && \
     mv /tmp/kafka-connect-mqtt-8.0.0/*.jar /opt/kafka/plugins/mqtt/ && \
-    rm -f /tmp/plugin.zip && \
-    ls -l /opt/kafka/plugins/mqtt
+    rm -f /tmp/plugin.zip
 
-# Volta para o usuário padrão do Strimzi
+# 3. O PULO DO GATO: Ajustar permissões
+# O Strimzi roda como usuário 1001. Se a pasta for do root, ele não consegue ler/executar.
+RUN chown -R 1001:0 /opt/kafka/plugins
+
+# Volta para o usuário padrão do Strimzi (Segurança)
 USER 1001
