@@ -8,14 +8,9 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
-  
-  # Endereço do Kafka (Obrigatório na spec)
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
-  
-  # Sua imagem customizada
   image: eurival/agro-connect-mqtt:1.0
 
-  # --- CORREÇÃO 1: Recursos ficam na raiz da spec ---
   resources:
     requests:
       memory: 512Mi
@@ -24,15 +19,16 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # Configuração de Log Inline (Para evitar erro de arquivo não encontrado)
+  # --- CORREÇÃO DA SINTAXE DE LOG ---
   logging:
-    type: inline
-    loggers:
-      connect.root.logger.level: INFO
+    type: external
+    valueFrom:
+      configMapKeyRef:
+        name: connect-logging
+        key: log4j.properties
   
-  # --- CORREÇÃO 2: Forçamos o endereço aqui dentro do config ---
   config:
-    # Isso garante que a propriedade exista mesmo se a automação falhar
+    # Bootstrap forçado
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
     
     group.id: connect-cluster
@@ -46,11 +42,3 @@ spec:
     value.converter.schemas.enable: false
     
     plugin.path: /opt/kafka/plugins
-
-  # Template limpo (removidos os campos inválidos)
-  template:
-    pod:
-      metadata:
-        annotations:
-          # Apenas uma annotation de exemplo para garantir que o bloco existe
-          strimzi.io/generation: "1"
