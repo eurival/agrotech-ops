@@ -12,7 +12,7 @@ spec:
   
   # AQUI: Aponte para a imagem que você acabou de criar no Passo 2
   # Exemplo: gutemberg/agro-connect-mqtt:1.0 (substitua pelo seu)
-  image: seu-usuario/agro-connect-mqtt:1.0
+  image: eurival/agro-connect-mqtt:1.0
   
   config:
     group.id: connect-cluster
