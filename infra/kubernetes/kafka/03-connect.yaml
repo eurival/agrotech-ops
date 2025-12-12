@@ -8,11 +8,21 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
+  
+  # Confirme se esse é o nome exato do serviço do seu Kafka (criado no passo 01)
+  # Geralmente é [nome-do-cluster]-kafka-bootstrap
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # AQUI: Aponte para a imagem que você acabou de criar no Passo 2
-  # Exemplo: gutemberg/agro-connect-mqtt:1.0 (substitua pelo seu)
-  image: eurival/agro-connect-mqtt:1.0
+  # AQUI: Coloque a imagem que você buildou e subiu pro Docker Hub
+  image: eurival/agro-connect-mqtt:1.0 
+  
+  # --- CORREÇÃO DO LOG4J ---
+  # Isso força o Strimzi a criar o arquivo de propriedades que está faltando
+  logging:
+    type: inline
+    loggers:
+      connect.root.logger.level: "INFO"
+      org.reflections.level: "WARN"
   
   config:
     group.id: connect-cluster
@@ -22,5 +32,16 @@ spec:
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: false
-    # Importante: O caminho onde colocamos o JAR no Dockerfile
+    # O caminho onde o plugin está na sua imagem customizada
     plugin.path: /opt/kafka/plugins
+    
+  # Recursos (Boa prática para não ser morto por OOM)
+  template:
+    pod:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 500m
+        limits:
+          memory: 1Gi
+          cpu: 1000m
