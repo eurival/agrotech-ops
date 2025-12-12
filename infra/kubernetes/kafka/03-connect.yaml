@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaConnect
 metadata:
   name: agro-connect
@@ -8,42 +8,44 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
-  
-  # Endereço interno do cluster Kafka (Confira se o nome bate com o passo 01)
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # A imagem customizada que você criou com o plugin
-  # IMPORTANTE: Garanta que essa imagem existe no seu Docker Hub
-  image: eurival/agro-connect-mqtt:1.0 
+  # Sua imagem correta
+  image: eurival/agro-connect-mqtt:1.0
   
-  # Configuração de Log INLINE (Isso resolve o erro do log4j)
+  # --- CORREÇÃO 1: Resources vem direto aqui, não no template ---
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 500m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+  # --- CORREÇÃO 2: Configuração de Log Inline ---
   logging:
     type: inline
     loggers:
       connect.root.logger.level: "INFO"
-      
-  # Recursos para evitar travamentos
-  template:
-    pod:
-      resources:
-        requests:
-          memory: 512Mi
-          cpu: 500m
-        limits:
-          memory: 1Gi
-          cpu: 1000m
-
+  
+  # Configurações do Kafka Connect
   config:
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
     status.storage.topic: connect-cluster-status
-    # Aumentei o timeout para evitar desconexões
     offset.flush.interval.ms: 10000
     
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: false
     
-    # Caminho onde colocamos o jar no Dockerfile
     plugin.path: /opt/kafka/plugins
+
+  # Template deixamos vazio ou removemos se não for usar labels extras
+  # (Se não precisar customizar labels do pod, pode até apagar esse bloco template)
+  template:
+    pod:
+      metadata:
+        annotations:
+          cloud.google.com/neg: '{"ingress": true}' # Exemplo, pode remover se não usar
