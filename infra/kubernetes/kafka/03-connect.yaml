@@ -8,9 +8,10 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
+  
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Sua imagem 5.0 (com a correção embutida do log4j.properties)
+  # IMAGEM 5.0 (Com a correção do log4j.properties embutida)
   image: eurival/agro-connect-mqtt:5.0
 
   resources:
@@ -21,26 +22,10 @@ spec:
       memory: 1Gi
       cpu: 1000m
   
-  # --- O BYPASS DO VOLUME DE CONFIGURAÇÃO (Sintaxe Strimzi) ---
-  template:
-    # 1. Removendo a montagem do volume 'kafka-config' para o custom-config
-    connectContainer:
-      volumeMounts:
-        # Sobrescrevemos a montagem do volume padrão do Strimzi
-        # Excluindo a montagem para /opt/kafka/custom-config
-        - name: kafka-config
-          mountPath: /opt/kafka/config
-        - name: kafka-config
-          mountPath: /opt/kafka/init
-          
-    # 2. Definimos os volumes que o Strimzi precisa
-    pod:
-      volumes:
-        - name: kafka-config
-          configMap:
-            name: agro-connect-connect-config # Nome do ConfigMap gerado pelo Strimzi
+  # SEM NENHUM CAMPO DE CUSTOMIZAÇÃO AVANÇADA
 
   config:
+    # A configuração do conector é injetada aqui
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
     
     group.id: connect-cluster
