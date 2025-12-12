@@ -10,7 +10,7 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # IMAGEM 5.0 (Com a correção embutida do log4j.properties)
+  # IMAGEM 5.0 (Usada, mas agora ignoramos o hack interno)
   image: eurival/agro-connect-mqtt:5.0
 
   resources:
@@ -21,11 +21,10 @@ spec:
       memory: 1Gi
       cpu: 1000m
   
-  # REMOVEMOS: template
-  # REMOVEMOS: logging
+  # --- REMOVEMOS: logging: e template: connectContainer
+  # --- Agora vamos remover a montagem do volume (se o Strimzi permitir)
 
   config:
-    # Redundância de segurança
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
     
     group.id: connect-cluster
