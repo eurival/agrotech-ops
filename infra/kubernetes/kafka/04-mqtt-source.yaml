@@ -1,24 +1,31 @@
-apiVersion: kafka.strimzi.io/v1
+apiVersion: kafka.strimzi.io/v1beta2 # Atualizei para v1beta2 para ficar consistente
 kind: KafkaConnector
 metadata:
   name: mqtt-source-agro
   namespace: agrotech
   labels:
-    strimzi.io/cluster: agro-connect # Precisa bater com o nome do KafkaConnect
+    strimzi.io/cluster: agro-connect
 spec:
-  class: io.streamthoughts.kafka.connect.mqtt.source.MqttSourceConnector
+  class: io.lenses.streamreactor.connect.mqtt.source.MqttSourceConnector
   tasksMax: 1
   config:
-    # Configurações do Plugin MQTT
-    mqtt.listener.servers: tcp://mosquitto-svc:1883
-    mqtt.client.id: kafka-connect-worker
-    mqtt.clean.session: true
+    # --- Conexão MQTT ---
+    connect.mqtt.hosts: "tcp://mosquitto-svc:1883"
+    connect.mqtt.service.quality: "1"
+    connect.mqtt.clean: "true"
+    connect.mqtt.timeout: "1000"
     
-    # Filtro: Pega tudo que começar com "sensores/" e terminar com "/telemetria"
-    mqtt.source.filter: sensores/+/telemetria
+    # --- O Mapeamento (KCQL) ---
+    # Lógica: Pegar do tópico MQTT 'sensores/+/telemetria' e jogar no Kafka 'telemetria-raw'
+    # O comando WITHCONVERTER garante que o payload chegue como bytes brutos (útil pro Spark depois)
+    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria WITHCONVERTER=`org.apache.kafka.connect.converters.ByteArrayConverter`"
     
-    # Destino no Kafka
-    kafka.topic: telemetria-raw
+    # --- Conversores ---
+    # Forçamos ByteArray para não ter erro de parse JSON dentro do Connect
+    # Deixamos o Spark lidar com o JSON depois.
+    key.converter: "org.apache.kafka.connect.storage.StringConverter"
+    value.converter: "org.apache.kafka.connect.converters.ByteArrayConverter"
     
-    # Converter o Payload binário para Byte Array (o Spark depois faz o parse do JSON)
-    mqtt.payload.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+    # Debug (opcional, bom para o inicio)
+    errors.log.enable: "true"
+    errors.log.include.messages: "true"

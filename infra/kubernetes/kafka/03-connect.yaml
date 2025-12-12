@@ -10,10 +10,8 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Imagem Oficial Limpa
   image: quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
   
-  # A Injeção do Plugin
   template:
     pod:
       volumes:
@@ -23,15 +21,21 @@ spec:
       - name: download-plugins
         image: busybox:1.36
         command: ["sh", "-c"]
-        # Baixa, Deszipa e Move para a pasta correta
         args:
           - |
-            echo "--- INICIANDO DOWNLOAD DO PLUGIN ---"
+            echo "--- INICIANDO DOWNLOAD DO PLUGIN LENSES MQTT ---"
             mkdir -p /opt/kafka/plugins/mqtt
-            wget -q -O /tmp/plugin.zip https://github.com/streamthoughts/kafka-connect-mqtt/releases/download/v2.3.0/streamthoughts-kafka-connect-mqtt-2.3.0.zip
+            
+            # Link atualizado para o Lenses Stream Reactor (Versão 8.0.0)
+            wget -q -O /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/8.1.33/kafka-connect-mqtt-8.1.33.zip
+            
             if [ $? -ne 0 ]; then echo "ERRO NO DOWNLOAD"; exit 1; fi
+            
             unzip -q /tmp/plugin.zip -d /tmp/
-            mv /tmp/streamthoughts-kafka-connect-mqtt-2.3.0/* /opt/kafka/plugins/mqtt/
+            
+            # O zip do Lenses cria uma pasta com versão, movemos o JAR de dentro dela
+            mv /tmp/kafka-connect-mqtt-8.1.33/*.jar /opt/kafka/plugins/mqtt/
+            
             ls -R /opt/kafka/plugins/mqtt
             echo "--- SUCESSO ---"
         volumeMounts:
@@ -48,8 +52,8 @@ spec:
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
     status.storage.topic: connect-cluster-status
+    # Mantive StringConverter aqui, mas podemos ajustar no conector específico se precisar
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: false
-    # Onde o Kafka vai ler os plugins baixados
     plugin.path: /opt/kafka/plugins
