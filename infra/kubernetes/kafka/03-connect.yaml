@@ -12,7 +12,7 @@ spec:
   # Endereço do Kafka
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Sua imagem 3.0 (que está boa)
+  # Sua imagem 3.0 (que está correta)
   image: eurival/agro-connect-mqtt:3.0
 
   resources:
@@ -23,8 +23,17 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # --- CONFIGURAÇÃO DE TEMPLATE (CORRIGIDA) ---
-  # No Strimzi, para mexer no container do Connect, usamos 'connectContainer'
+  # --- SOLUÇÃO DO LOG (Dica do ChatGPT, jeito Strimzi) ---
+  # 'inline' faz o Strimzi criar o arquivo log4j.properties sozinho dentro da pasta certa.
+  # Isso resolve o erro de FileNotFoundException.
+  logging:
+    type: inline
+    loggers:
+      log4j.rootLogger: "INFO"
+  
+  # --- SOLUÇÃO DO BOOTSTRAP (Sintaxe Corrigida) ---
+  # O erro anterior foi porque usamos 'containers'.
+  # No Strimzi, o nome correto do campo é 'connectContainer'.
   template:
     connectContainer:
       env:
@@ -33,12 +42,9 @@ spec:
         - name: KAFKA_CONNECT_PLUGIN_PATH
           value: "/opt/kafka/plugins"
 
-  # Sem seção 'logging' (usa o padrão da imagem para não dar erro de arquivo)
-
   config:
-    # Redundância de segurança
+    # Redundância para garantir
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
-    
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
