@@ -8,8 +8,6 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
-  
-  # Endereço do Kafka
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
   # Sua imagem 3.0 (que está correta)
@@ -23,14 +21,14 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # --- SOLUÇÃO DO LOG (Dica do ChatGPT, jeito Strimzi) ---
-  # 'inline' faz o Strimzi criar o arquivo log4j.properties sozinho dentro da pasta certa.
-  # Isso resolve o erro de FileNotFoundException.
+  # --- SOLUÇÃO DO LOG (Automática) ---
+  # 'inline' faz o Strimzi gerar o arquivo log4j.properties sozinho.
+  # Isso ELIMINA o erro de FileNotFoundException.
   logging:
     type: inline
     loggers:
       log4j.rootLogger: "INFO"
-  
+
   # --- SOLUÇÃO DO BOOTSTRAP (Sintaxe Corrigida) ---
   # O erro anterior foi porque usamos 'containers'.
   # No Strimzi, o nome correto do campo é 'connectContainer'.
@@ -45,6 +43,7 @@ spec:
   config:
     # Redundância para garantir
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
+    
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
