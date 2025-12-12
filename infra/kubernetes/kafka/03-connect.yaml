@@ -8,10 +8,12 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
+  
+  # Endereço do Kafka
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Sua imagem 3.0 (que está correta)
-  image: eurival/agro-connect-mqtt:3.0
+  # NOVA IMAGEM 4.0 (Com o arquivo log4j.properties vazio)
+  image: eurival/agro-connect-mqtt:4.0
 
   resources:
     requests:
@@ -20,28 +22,12 @@ spec:
     limits:
       memory: 1Gi
       cpu: 1000m
-
-  # --- SOLUÇÃO DO LOG (Automática) ---
-  # 'inline' faz o Strimzi gerar o arquivo log4j.properties sozinho.
-  # Isso ELIMINA o erro de FileNotFoundException.
-  logging:
-    type: inline
-    loggers:
-      log4j.rootLogger: "INFO"
-
-  # --- SOLUÇÃO DO BOOTSTRAP (Sintaxe Corrigida) ---
-  # O erro anterior foi porque usamos 'containers'.
-  # No Strimzi, o nome correto do campo é 'connectContainer'.
-  template:
-    connectContainer:
-      env:
-        - name: KAFKA_BOOTSTRAP_SERVERS
-          value: "agro-cluster-kafka-bootstrap:9092"
-        - name: KAFKA_CONNECT_PLUGIN_PATH
-          value: "/opt/kafka/plugins"
+  
+  # REMOVEMOS: logging: type: inline/external
+  # REMOVEMOS: template: connectContainer
 
   config:
-    # Redundância para garantir
+    # Redundância de segurança
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
     
     group.id: connect-cluster
