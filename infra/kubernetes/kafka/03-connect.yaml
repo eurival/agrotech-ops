@@ -10,7 +10,7 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Imagem 3.0 (Permissões 1001 OK)
+  # Imagem 3.0 (que tem o plugin e permissões corrigidas)
   image: eurival/agro-connect-mqtt:3.0
 
   resources:
@@ -21,17 +21,17 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # AQUI: Apontamos para o ConfigMap do Passo 2
-  # Isso evita o FileNotFoundException
+  # --- AQUI É O PONTO CHAVE ---
+  # Dizemos explicitamente: Use o ConfigMap 'connect-logging'
   logging:
     type: external
     valueFrom:
       configMapKeyRef:
         name: connect-logging
         key: log4j.properties
-
+  
   config:
-    # Bootstrap forçado
+    # Forçamos o endereço do Kafka aqui para garantir
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
     
     group.id: connect-cluster
