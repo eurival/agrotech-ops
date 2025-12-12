@@ -14,7 +14,7 @@ spec:
   
   # A imagem customizada que você criou com o plugin
   # IMPORTANTE: Garanta que essa imagem existe no seu Docker Hub
-  image: seu-usuario/agro-connect-mqtt:1.0 
+  image: eurival/agro-connect-mqtt:1.0 
   
   # Configuração de Log INLINE (Isso resolve o erro do log4j)
   logging:
