@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2 # Atualizei para v1beta2 para ficar consistente
+apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
   name: mqtt-source-agro
@@ -15,17 +15,14 @@ spec:
     connect.mqtt.clean: "true"
     connect.mqtt.timeout: "1000"
     
-    # --- O Mapeamento (KCQL) ---
-    # Lógica: Pegar do tópico MQTT 'sensores/+/telemetria' e jogar no Kafka 'telemetria-raw'
-    # O comando WITHCONVERTER garante que o payload chegue como bytes brutos (útil pro Spark depois)
-    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria WITHCONVERTER=`org.apache.kafka.connect.converters.ByteArrayConverter`"
+    # --- O Mapeamento (KCQL) SIMPLIFICADO ---
+    # Usa o value.converter global (ByteArrayConverter)
+    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria"
     
-    # --- Conversores ---
-    # Forçamos ByteArray para não ter erro de parse JSON dentro do Connect
-    # Deixamos o Spark lidar com o JSON depois.
+    # --- Conversores (Correto) ---
     key.converter: "org.apache.kafka.connect.storage.StringConverter"
     value.converter: "org.apache.kafka.connect.converters.ByteArrayConverter"
     
-    # Debug (opcional, bom para o inicio)
+    # Debug (mantido)
     errors.log.enable: "true"
     errors.log.include.messages: "true"
