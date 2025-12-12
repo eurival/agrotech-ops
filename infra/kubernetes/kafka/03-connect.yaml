@@ -8,20 +8,11 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
-  
-  # Endereço do Kafka (Isso preenche o bootstrap.servers automaticamente)
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # IMAGEM NOVA 3.0 (Com permissões corrigidas)
+  # Imagem 3.0 (Permissões 1001 OK)
   image: eurival/agro-connect-mqtt:3.0
 
-  # Log Inline (O operador gera isso automaticamente)
-  logging:
-    type: inline
-    loggers:
-      connect.root.logger.level: "INFO"
-      
-  # Recursos
   resources:
     requests:
       memory: 512Mi
@@ -30,7 +21,19 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
+  # AQUI: Apontamos para o ConfigMap do Passo 2
+  # Isso evita o FileNotFoundException
+  logging:
+    type: external
+    valueFrom:
+      configMapKeyRef:
+        name: connect-logging
+        key: log4j.properties
+
   config:
+    # Bootstrap forçado
+    bootstrap.servers: agro-cluster-kafka-bootstrap:9092
+    
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
