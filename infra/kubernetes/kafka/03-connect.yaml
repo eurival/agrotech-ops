@@ -10,50 +10,17 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  image: quay.io/strimzi/kafka:0.40.0-kafka-3.7.0
+  # AQUI: Aponte para a imagem que você acabou de criar no Passo 2
+  # Exemplo: gutemberg/agro-connect-mqtt:1.0 (substitua pelo seu)
+  image: seu-usuario/agro-connect-mqtt:1.0
   
-  template:
-    pod:
-      volumes:
-      - name: connector-plugins
-        emptyDir: {}
-      initContainers:
-      - name: download-plugins
-        image: busybox:1.36
-        command: ["sh", "-c"]
-        args:
-          - |
-            echo "--- INICIANDO DOWNLOAD DO PLUGIN LENSES MQTT ---"
-            mkdir -p /opt/kafka/plugins/mqtt
-            
-            # Link atualizado para o Lenses Stream Reactor (Versão 8.0.0)
-            wget -q -O /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/8.1.33/kafka-connect-mqtt-8.1.33.zip
-            
-            if [ $? -ne 0 ]; then echo "ERRO NO DOWNLOAD"; exit 1; fi
-            
-            unzip -q /tmp/plugin.zip -d /tmp/
-            
-            # O zip do Lenses cria uma pasta com versão, movemos o JAR de dentro dela
-            mv /tmp/kafka-connect-mqtt-8.1.33/*.jar /opt/kafka/plugins/mqtt/
-            
-            ls -R /opt/kafka/plugins/mqtt
-            echo "--- SUCESSO ---"
-        volumeMounts:
-        - name: connector-plugins
-          mountPath: /opt/kafka/plugins
-      containers:
-      - name: kafka-connect
-        volumeMounts:
-        - name: connector-plugins
-          mountPath: /opt/kafka/plugins
-
   config:
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
     status.storage.topic: connect-cluster-status
-    # Mantive StringConverter aqui, mas podemos ajustar no conector específico se precisar
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: false
+    # Importante: O caminho onde colocamos o JAR no Dockerfile
     plugin.path: /opt/kafka/plugins
