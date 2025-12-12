@@ -5,27 +5,23 @@ metadata:
   namespace: argocd
 spec:
   description: Projeto IoT e Big Data para Agricultura
-  
-  # 1. Repositórios permitidos (Segurança: só aceita o seu Git)
   sourceRepos:
-  - "https://github.com/eurival/agrotech-ops.git"
+  - "https://github.com/eurival/agrotech-ops.git" # (Ajuste para seu user real)
 
-  # 2. Destinos permitidos (Onde os apps podem ser instalados)
   destinations:
+  # Onde vão ficar os apps de negócio (Kafka, Spark, etc)
   - namespace: agrotech
     server: https://kubernetes.default.svc
-  - namespace: spark-operator-system # Necessário para o Spark Operator
+  # Onde fica o Spark Operator
+  - namespace: spark-operator-system
     server: https://kubernetes.default.svc
-  # Permitir criar Namespaces se não existirem
-  - namespace: agrotech
-    server: https://kubernetes.default.svc 
-    
-  # 3. Recursos de Cluster (Necessário para Operators criarem CRDs e ClusterRoles)
+  # CORREÇÃO CRÍTICA: Permite que o Argo crie as definições "App of Apps" dentro dele mesmo
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+
   clusterResourceWhitelist:
   - group: '*'
     kind: '*'
-  
-  # 4. Recursos de Namespace (Permite tudo dentro do namespace agrotech)
   namespaceResourceWhitelist:
   - group: '*'
     kind: '*'
