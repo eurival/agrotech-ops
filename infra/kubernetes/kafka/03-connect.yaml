@@ -9,12 +9,19 @@ spec:
   version: 3.7.0
   replicas: 1
   
-  # Endereço do Kafka
+  # Endereço do Kafka (Isso preenche o bootstrap.servers automaticamente)
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # NOVA IMAGEM 2.0
-  image: eurival/agro-connect-mqtt:2.0
+  # IMAGEM NOVA 3.0 (Com permissões corrigidas)
+  image: eurival/agro-connect-mqtt:3.0
 
+  # Log Inline (O operador gera isso automaticamente)
+  logging:
+    type: inline
+    loggers:
+      connect.root.logger.level: "INFO"
+      
+  # Recursos
   resources:
     requests:
       memory: 512Mi
@@ -23,14 +30,7 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # Removemos a seção 'logging' propositalmente.
-  # Isso força o Strimzi a usar o log4j padrão embutido na imagem,
-  # eliminando o erro de FileNotFound.
-  
   config:
-    # Segurança extra: Forçar o endereço aqui
-    bootstrap.servers: agro-cluster-kafka-bootstrap:9092
-    
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
