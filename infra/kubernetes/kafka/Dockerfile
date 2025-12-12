@@ -9,9 +9,9 @@ RUN microdnf install -y unzip wget
 
 # 1. Cria a pasta de plugins e baixa o conector Lenses
 RUN mkdir -p /opt/kafka/plugins/mqtt && \
-    curl -L -o /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/8.0.0/kafka-connect-mqtt-8.0.0.zip && \
+    curl -L -o /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/11.1.0/kafka-connect-mqtt-11.1.0.zip && \
     unzip -q /tmp/plugin.zip -d /tmp/ && \
-    mv /tmp/kafka-connect-mqtt-8.0.0/*.jar /opt/kafka/plugins/mqtt/ && \
+    mv /tmp/kafka-connect-mqtt-11.1.0/*.jar /opt/kafka/plugins/mqtt/ && \
     rm -f /tmp/plugin.zip
 
 # 2. HACK FINAL: Criamos o arquivo log4j.properties que o Java procura

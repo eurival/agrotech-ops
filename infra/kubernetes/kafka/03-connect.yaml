@@ -13,7 +13,7 @@ spec:
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
   # IMAGEM 8.0
-  image: eurival/agro-connect-mqtt:9.0
+  image: eurival/agro-connect-mqtt:9.1
 
   resources:
     requests:
