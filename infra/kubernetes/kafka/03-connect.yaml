@@ -10,7 +10,8 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  image: eurival/agro-connect-mqtt:3.0
+  # IMAGEM 5.0 (Com a correção embutida do log4j.properties)
+  image: eurival/agro-connect-mqtt:5.0
 
   resources:
     requests:
@@ -19,23 +20,9 @@ spec:
     limits:
       memory: 1Gi
       cpu: 1000m
-
-  # --- SOLUÇÃO DO LOG: Corrigindo o NOME do arquivo ---
-  # Isso faz o Strimzi gerar um ConfigMap com o NOME correto
-  logging:
-    type: inline
-    # O Strimzi usa o campo `loggers` para gerar o arquivo, 
-    # mas alguns pods antigos procuram o nome 'log4j.properties'. 
-    # Vamos usar o formato que força o nome correto:
-    loggers:
-      connect.root.logger.level: "INFO"
-      
-  # Injeção manual do Bootstrap (para garantir)
-  template:
-    connectContainer:
-      env:
-        - name: KAFKA_BOOTSTRAP_SERVERS
-          value: "agro-cluster-kafka-bootstrap:9092"
+  
+  # REMOVEMOS: template
+  # REMOVEMOS: logging
 
   config:
     # Redundância de segurança
