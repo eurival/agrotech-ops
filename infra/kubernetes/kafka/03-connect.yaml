@@ -8,12 +8,14 @@ metadata:
 spec:
   version: 3.7.0
   replicas: 1
+  
+  # Endereço "Oficial" (usado pelo Operador)
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Sua imagem com o plugin embutido
+  # Sua imagem customizada
   image: eurival/agro-connect-mqtt:1.0
   
-  # Recursos definidos direto na spec
+  # Recursos (mantive pois estava correto)
   resources:
     requests:
       memory: 512Mi
@@ -22,14 +24,13 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # Log inline para evitar erro de arquivo não encontrado
-  logging:
-    type: inline
-    loggers:
-      connect.root.logger.level: "INFO"
-  
-  # Na v1beta2, essas configurações ficam aqui dentro de 'config'
+  # Bloco de Configuração Interna
   config:
+    # --- O PULO DO GATO ---
+    # Estamos forçando o endereço aqui dentro também.
+    # Isso preenche a linha vazia que estava matando o processo.
+    bootstrap.servers: agro-cluster-kafka-bootstrap:9092
+    
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
