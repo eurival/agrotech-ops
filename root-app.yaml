@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: agrotech-infra-root
+  namespace: argocd
+spec:
+  project: agrotech-project
+  source:
+    repoURL: https://github.com/eurival/agrotech-ops.git
+    targetRevision: HEAD
+    path: infra/kubernetes
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: agrotech
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

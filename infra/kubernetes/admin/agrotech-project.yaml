@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: agrotech-project
+  namespace: argocd
+spec:
+  description: Projeto IoT e Big Data para Agricultura
+  
+  # 1. Repositórios permitidos (Segurança: só aceita o seu Git)
+  sourceRepos:
+  - "https://github.com/eurival/agrotech-ops.git"
+
+  # 2. Destinos permitidos (Onde os apps podem ser instalados)
+  destinations:
+  - namespace: agrotech
+    server: https://kubernetes.default.svc
+  - namespace: spark-operator-system # Necessário para o Spark Operator
+    server: https://kubernetes.default.svc
+  # Permitir criar Namespaces se não existirem
+  - namespace: agrotech
+    server: https://kubernetes.default.svc 
+    
+  # 3. Recursos de Cluster (Necessário para Operators criarem CRDs e ClusterRoles)
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  
+  # 4. Recursos de Namespace (Permite tudo dentro do namespace agrotech)
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'

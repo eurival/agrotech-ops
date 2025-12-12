@@ -39,11 +39,11 @@ spec:
         - containerPort: 5432
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
             memory: "512Mi"
             cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgis-storage

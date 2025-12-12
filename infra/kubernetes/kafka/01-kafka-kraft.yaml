@@ -1,15 +1,15 @@
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: Kafka
 metadata:
   name: agro-cluster
   namespace: agrotech
   annotations:
-    strimzi.io/node-pools: "enabled" # Ativa o novo formato de pools
-    strimzi.io/kraft: "enabled"      # Ativa o modo sem Zookeeper
+    strimzi.io/node-pools: "enabled"
+    strimzi.io/kraft: "enabled"
 spec:
   kafka:
-    version: 4.0.0 # Versão compatível com seu Operator 0.49.1
-    metadataVersion: 4.0-IV0
+    version: 4.1.1 # Versão estável
+    metadataVersion: 4.1-IV0
     listeners:
       - name: plain
         port: 9092
@@ -17,15 +17,19 @@ spec:
         tls: false
       - name: external
         port: 9094
-        type: nodeport # Acesso externo para testes
+        type: nodeport
         tls: false
+        configuration:
+          bootstrap:
+            nodePort: 30094 # <--- PORTA FIXA para o HAProxy
+          brokers:
+          - broker: 0
+            # O Kafka precisa anunciar o endereço que o Endian expõe para a internet
+            advertisedHost: kafka.interglobaltecnologia.com.br 
+            advertisedPort: 9094 # A porta que o Endian expõe pra fora
     config:
       offsets.topic.replication.factor: 1
       transaction.state.log.replication.factor: 1
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
-      # Configurações específicas do KRaft
-      process.roles: broker,controller
-      node.id: 0
-      controller.quorum.voters: 0@agro-cluster-pool-0:9093

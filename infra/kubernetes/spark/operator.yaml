@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spark-operator
+  namespace: argocd
+spec:
+  project: agrotech-project
+  source:
+    repoURL: https://kubeflow.github.io/spark-operator
+    chart: spark-operator
+    targetRevision: 2.3.0
+    helm:
+      parameters:
+        - name: sparkJobNamespace
+          value: agrotech
+        - name: webhook.enable
+          value: "true"
+        - name: metrics.enable
+          value: "false"
+        - name: ui.service.enable
+          value: "false"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: spark-operator-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
