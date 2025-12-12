@@ -10,7 +10,7 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Imagem 3.0 (que tem o plugin e permissões corrigidas)
+  # Sua imagem 3.0 (que tem as permissões 1001 corretas)
   image: eurival/agro-connect-mqtt:3.0
 
   resources:
@@ -21,27 +21,31 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # --- AQUI É O PONTO CHAVE ---
-  # Dizemos explicitamente: Use o ConfigMap 'connect-logging'
+  # --- CORREÇÃO DO LOGGING (LOG4J 2) ---
+  # Usamos 'inline' para o Operator criar o arquivo sozinho.
+  # A sintaxe abaixo é compatível com Kafka 3.x
   logging:
-    type: external
-    valueFrom:
-      configMapKeyRef:
-        name: connect-logging
-        key: log4j.properties
+    type: inline
+    loggers:
+      log4j.rootLogger: "INFO"
+      loggers.zookeeper.name: "org.apache.zookeeper"
+      loggers.zookeeper.level: "WARN"
   
   config:
-    # Forçamos o endereço do Kafka aqui para garantir
+    # Bootstrap Servers
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
     
+    # Configurações Padrão
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
     status.storage.topic: connect-cluster-status
     offset.flush.interval.ms: 10000
     
+    # Conversores
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: false
     
+    # Plugin Path
     plugin.path: /opt/kafka/plugins
