@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta2 
+apiVersion: kafka.strimzi.io/v1beta2 # <--- FIX: Voltando para a versão permissiva
 kind: KafkaConnect
 metadata:
   name: agro-connect
@@ -10,11 +10,14 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   image: docker.io/arthurhm/kafka-connect-mqtt:latest 
+  
+  # Na v1beta2, essas propriedades vivem felizes dentro do config
   config:
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
     config.storage.topic: connect-cluster-configs
     status.storage.topic: connect-cluster-status
+    # Conversores para JSON (facilita leitura humana no início)
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: false
