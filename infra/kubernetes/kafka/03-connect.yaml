@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnect
 metadata:
   name: agro-connect
@@ -10,10 +10,10 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # Sua imagem correta
+  # Sua imagem com o plugin embutido
   image: eurival/agro-connect-mqtt:1.0
   
-  # --- CORREÇÃO 1: Resources vem direto aqui, não no template ---
+  # Recursos definidos direto na spec
   resources:
     requests:
       memory: 512Mi
@@ -22,13 +22,13 @@ spec:
       memory: 1Gi
       cpu: 1000m
 
-  # --- CORREÇÃO 2: Configuração de Log Inline ---
+  # Log inline para evitar erro de arquivo não encontrado
   logging:
     type: inline
     loggers:
       connect.root.logger.level: "INFO"
   
-  # Configurações do Kafka Connect
+  # Na v1beta2, essas configurações ficam aqui dentro de 'config'
   config:
     group.id: connect-cluster
     offset.storage.topic: connect-cluster-offsets
@@ -41,11 +41,3 @@ spec:
     value.converter.schemas.enable: false
     
     plugin.path: /opt/kafka/plugins
-
-  # Template deixamos vazio ou removemos se não for usar labels extras
-  # (Se não precisar customizar labels do pod, pode até apagar esse bloco template)
-  template:
-    pod:
-      metadata:
-        annotations:
-          cloud.google.com/neg: '{"ingress": true}' # Exemplo, pode remover se não usar
