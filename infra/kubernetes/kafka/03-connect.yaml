@@ -10,7 +10,7 @@ spec:
   replicas: 1
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # IMAGEM 5.0 (Usada, mas agora ignoramos o hack interno)
+  # Sua imagem 5.0 (com a correção embutida do log4j.properties)
   image: eurival/agro-connect-mqtt:5.0
 
   resources:
@@ -21,8 +21,24 @@ spec:
       memory: 1Gi
       cpu: 1000m
   
-  # --- REMOVEMOS: logging: e template: connectContainer
-  # --- Agora vamos remover a montagem do volume (se o Strimzi permitir)
+  # --- O BYPASS DO VOLUME DE CONFIGURAÇÃO (Sintaxe Strimzi) ---
+  template:
+    # 1. Removendo a montagem do volume 'kafka-config' para o custom-config
+    connectContainer:
+      volumeMounts:
+        # Sobrescrevemos a montagem do volume padrão do Strimzi
+        # Excluindo a montagem para /opt/kafka/custom-config
+        - name: kafka-config
+          mountPath: /opt/kafka/config
+        - name: kafka-config
+          mountPath: /opt/kafka/init
+          
+    # 2. Definimos os volumes que o Strimzi precisa
+    pod:
+      volumes:
+        - name: kafka-config
+          configMap:
+            name: agro-connect-connect-config # Nome do ConfigMap gerado pelo Strimzi
 
   config:
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
