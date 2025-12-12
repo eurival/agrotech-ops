@@ -1,20 +1,20 @@
-# Usa a imagem base oficial do Strimzi
+# USANDO A TAG EXISTENTE QUE SUPORTA O KAFKA 4.1.1
 FROM quay.io/strimzi/kafka:latest-kafka-4.1.1
 
 USER root:root
 
-# Instala utilitários
-RUN microdnf install -y unzip wget curl
+# REMOVEMOS: RUN microdnf install -y unzip wget curl
+# Vamos apenas tentar instalar unzip e wget (que não devem conflitar)
+RUN microdnf install -y unzip wget
 
 # 1. Cria a pasta de plugins e baixa o conector Lenses
-RUN curl -L -o /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/8.0.0/kafka-connect-mqtt-8.0.0.zip && \
-    mkdir -p /opt/kafka/plugins/mqtt && \
+RUN mkdir -p /opt/kafka/plugins/mqtt && \
+    curl -L -o /tmp/plugin.zip https://github.com/lensesio/stream-reactor/releases/download/8.0.0/kafka-connect-mqtt-8.0.0.zip && \
     unzip -q /tmp/plugin.zip -d /tmp/ && \
     mv /tmp/kafka-connect-mqtt-8.0.0/*.jar /opt/kafka/plugins/mqtt/ && \
     rm -f /tmp/plugin.zip
 
-# 2. HACK FINAL: Criamos a pasta custom-config e garantimos que o log4j.properties exista.
-# Como o Strimzi sempre cria o log4j2.properties, vamos criar o VAZIO que o Java procura.
+# 2. HACK FINAL: Criamos o arquivo log4j.properties que o Java procura
 RUN mkdir -p /opt/kafka/custom-config && \
     touch /opt/kafka/custom-config/log4j.properties
 
