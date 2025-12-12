@@ -9,33 +9,20 @@ spec:
   version: 3.7.0
   replicas: 1
   
-  # Confirme se esse é o nome exato do serviço do seu Kafka (criado no passo 01)
-  # Geralmente é [nome-do-cluster]-kafka-bootstrap
+  # Endereço interno do cluster Kafka (Confira se o nome bate com o passo 01)
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # AQUI: Coloque a imagem que você buildou e subiu pro Docker Hub
-  image: eurival/agro-connect-mqtt:1.0 
+  # A imagem customizada que você criou com o plugin
+  # IMPORTANTE: Garanta que essa imagem existe no seu Docker Hub
+  image: seu-usuario/agro-connect-mqtt:1.0 
   
-  # --- CORREÇÃO DO LOG4J ---
-  # Isso força o Strimzi a criar o arquivo de propriedades que está faltando
+  # Configuração de Log INLINE (Isso resolve o erro do log4j)
   logging:
     type: inline
     loggers:
       connect.root.logger.level: "INFO"
-      org.reflections.level: "WARN"
-  
-  config:
-    group.id: connect-cluster
-    offset.storage.topic: connect-cluster-offsets
-    config.storage.topic: connect-cluster-configs
-    status.storage.topic: connect-cluster-status
-    key.converter: org.apache.kafka.connect.storage.StringConverter
-    value.converter: org.apache.kafka.connect.json.JsonConverter
-    value.converter.schemas.enable: false
-    # O caminho onde o plugin está na sua imagem customizada
-    plugin.path: /opt/kafka/plugins
-    
-  # Recursos (Boa prática para não ser morto por OOM)
+      
+  # Recursos para evitar travamentos
   template:
     pod:
       resources:
@@ -45,3 +32,18 @@ spec:
         limits:
           memory: 1Gi
           cpu: 1000m
+
+  config:
+    group.id: connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    # Aumentei o timeout para evitar desconexões
+    offset.flush.interval.ms: 10000
+    
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    value.converter: org.apache.kafka.connect.json.JsonConverter
+    value.converter.schemas.enable: false
+    
+    # Caminho onde colocamos o jar no Dockerfile
+    plugin.path: /opt/kafka/plugins
