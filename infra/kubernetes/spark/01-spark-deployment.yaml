@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-processor
+  namespace: agrotech
+  labels:
+    app: spark-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-processor
+  template:
+    metadata:
+      labels:
+        app: spark-processor
+    spec:
+      containers:
+      - name: spark-processor
+        image: eurival/agrotech-spark:v1  
+        imagePullPolicy: Always
+        command: ["/opt/bitnami/spark/bin/spark-submit"]
+        args:
+          - "--master"
+          - "local[*]" 
+          - "/app/processor.py"
+        env:
+        - name: PYTHONIOENCODING
+          value: "utf8"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+      restartPolicy: Always
