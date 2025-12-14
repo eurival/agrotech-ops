@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: spark-processor
-        image: eurival/agrotech-spark:v2  
+        image: eurival/agrotech-spark:v3  
         imagePullPolicy: Always
         command: ["/opt/bitnami/spark/bin/spark-submit"]
         args:
