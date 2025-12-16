@@ -29,6 +29,8 @@ spec:
       - name: postgis
         image: postgis/postgis:15-3.3
         env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
         - name: POSTGRES_USER
           value: "agro_admin"
         - name: POSTGRES_PASSWORD
