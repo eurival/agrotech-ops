@@ -1,16 +1,34 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, current_timestamp, to_json
+from pyspark.sql.functions import from_json, col, current_timestamp, to_json, struct
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
 
-# 1. Configuração da Sessão Spark
+# 1. Configuração da Sessão
 spark = SparkSession.builder \
     .appName("AgrotechTelemetryProcessor") \
+    .config("spark.sql.shuffle.partitions", "2") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
 
-# 2. Definição do Schema (Atualizado para o Firmware Profissional)
-# O campo 'dadosAdicionais' agora é um Objeto (Struct) e não mais string solta.
+# --- CONFIGURAÇÃO DO BANCO (Usada para Leitura e Escrita) ---
+db_url = "jdbc:postgresql://postgis-svc:5432/agrotech_db"
+db_props = {
+    "user": "agro_admin",
+    "password": "%%%%%3Filhos32023@@",
+    "driver": "org.postgresql.Driver",
+    "stringtype": "unspecified"
+}
+
+# 2. CARREGAR TABELA DE DISPOSITIVOS (LOOKUP)
+# Carregamos isso em memória para converter MAC -> ID
+# Dica: Em produção, se devices novos entram toda hora, ideal recarregar isso periodicamente ou usar um micro-batch trigger.
+df_dispositivos = spark.read.jdbc(url=db_url, table="dispositivo", properties=db_props) \
+    .select(col("identificador_mac").alias("mac_lookup"), col("id").alias("device_id_found"))
+
+# Otimização: Cachear tabela pequena para não bater no banco a cada batch
+df_dispositivos.cache()
+
+# 3. Schemas (Firmware Profissional)
 dados_adicionais_schema = StructType([
     StructField("ip", StringType(), True),
     StructField("rssi", IntegerType(), True),
@@ -19,17 +37,16 @@ dados_adicionais_schema = StructType([
     StructField("local", StringType(), True)
 ])
 
-# Schema Principal
 schema = StructType([
+    StructField("mac", StringType(), True), # MAC vem na raiz
     StructField("temperatura", FloatType(), True),
     StructField("umidade", FloatType(), True),
     StructField("latitude", FloatType(), True),
     StructField("longitude", FloatType(), True),
-    # Aqui definimos a estrutura aninhada
     StructField("dadosAdicionais", dados_adicionais_schema, True)
 ])
 
-# 3. Leitura do Kafka (Stream)
+# 4. Leitura Kafka
 df_raw = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", "agro-cluster-kafka-bootstrap:9092") \
@@ -37,50 +54,47 @@ df_raw = spark.readStream \
     .option("startingOffsets", "latest") \
     .load()
 
-# 4. Transformação (ETL)
-# Parse do JSON que vem do Firmware
+# 5. Transformação
 df_parsed = df_raw.selectExpr("CAST(value AS STRING)") \
-    .select(from_json(col("value"), schema).alias("data"))
+    .select(from_json(col("value"), schema).alias("data")) \
+    .select("data.*") # "Explode" a struct para colunas: mac, temperatura, dadosAdicionais...
 
-# Seleção e Preparação para o Banco
-# ATENÇÃO: O PostgreSQL espera que a coluna 'dados_adicionais' (jsonb) receba uma STRING.
-# Por isso usamos to_json(col("data.dadosAdicionais"))
-df_final = df_parsed.select(
-    col("data.temperatura"),
-    col("data.umidade"),
-    col("data.latitude"),
-    col("data.longitude"),
-    to_json(col("data.dadosAdicionais")).alias("dados_adicionais"), # Converte Struct -> JSON String
-    current_timestamp().alias("data_hora") # O Firmware não manda hora, geramos aqui
+# 6. ENRIQUECIMENTO (JOIN COM DISPOSITIVO)
+# Fazemos um Left Join pelo MAC. Se não achar, device_id_found será null.
+df_enriched = df_parsed.join(df_dispositivos, df_parsed.mac == df_dispositivos.mac_lookup, "left")
+
+# 7. Preparação Final
+df_final = df_enriched.select(
+    col("temperatura"),
+    col("umidade"),
+    col("latitude"),
+    col("longitude"),
+    col("device_id_found").alias("dispositivo_id"), # <-- AQUI ESTA A MAGIA
+    current_timestamp().alias("data_hora"),
+    
+    # Truque: Vamos injetar o MAC original dentro do JSONB também, 
+    # caso o dispositivo_id seja null (segurança para auditoria)
+    to_json(struct(
+        col("mac"), 
+        col("dadosAdicionais.*")
+    )).alias("dados_adicionais")
 )
 
-# Filtra apenas dados válidos (garantia simples)
+# Filtro de segurança
 df_final = df_final.filter(col("temperatura").isNotNull())
 
-# 5. Escrita no PostgreSQL (Via JDBC)
+# 8. Escrita no PostgreSQL
 def write_to_postgres(batch_df, batch_id):
-    print(f"Processando Batch ID: {batch_id}")
-    
-    # Atualizei o nome do banco e tabela baseado no seu Entity JPA
-    jdbc_url = "jdbc:postgresql://postgis-svc:5432/agrotech" 
-    
-    properties = {
-        "user": "agro_admin",
-        "password": "%%%%%3Filhos32023@@",
-        "driver": "org.postgresql.Driver",
-        # stringtype=unspecified ajuda o driver a converter String para JSONB automaticamente
-        "stringtype": "unspecified" 
-    }
-
+    # Persistência
     try:
-        # Tabela atualizada para 'telemetria' (conforme sua entidade Java)
+        # Se device_id for nulo, o banco pode reclamar se a coluna for NOT NULL.
+        # Caso seja nullable, vai entrar como "sem dono".
         batch_df.write \
-            .jdbc(url=jdbc_url, table="telemetria", mode="append", properties=properties)
-        print(f"Batch {batch_id} salvo com sucesso! Registros: {batch_df.count()}")
+            .jdbc(url=db_url, table="telemetria", mode="append", properties=db_props)
+        print(f"Batch {batch_id}: {batch_df.count()} registros processados.")
     except Exception as e:
-        print(f"Erro ao salvar no Postgres: {str(e)}")
+        print(f"ERRO Batch {batch_id}: {str(e)}")
 
-# Inicia o Stream
 query = df_final.writeStream \
     .foreachBatch(write_to_postgres) \
     .outputMode("append") \
