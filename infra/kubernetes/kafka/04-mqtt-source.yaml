@@ -15,14 +15,28 @@ spec:
     connect.mqtt.clean: "true"
     connect.mqtt.timeout: "1000"
     
-    # --- O Mapeamento (KCQL) SIMPLIFICADO ---
-    # Usa o value.converter global (ByteArrayConverter)
-    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria"
+    # --- O Mapeamento (KCQL) CORRIGIDO ---
+    # Regra 1: sensores/+/telemetria -> telemetria-raw
+    # Regra 2: onboarding/novo       -> onboarding-raw
+    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria; INSERT INTO onboarding-raw SELECT * FROM onboarding/novo"
     
-    # --- Conversores (Correto) ---
+    # --- Conversores ---
     key.converter: "org.apache.kafka.connect.storage.StringConverter"
     value.converter: "org.apache.kafka.connect.converters.ByteArrayConverter"
     
-    # Debug (mantido)
     errors.log.enable: "true"
     errors.log.include.messages: "true"
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: onboarding-raw
+  namespace: agrotech
+  labels:
+    strimzi.io/cluster: agro-cluster
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 604800000
