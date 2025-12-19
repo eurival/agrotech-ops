@@ -27,16 +27,4 @@ spec:
     errors.log.enable: "true"
     errors.log.include.messages: "true"
 
----
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaTopic
-metadata:
-  name: onboarding-raw
-  namespace: agrotech
-  labels:
-    strimzi.io/cluster: agro-cluster
-spec:
-  partitions: 1
-  replicas: 1
-  config:
-    retention.ms: 604800000
+ 
