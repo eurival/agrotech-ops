@@ -4,7 +4,7 @@ metadata:
   name: agrotech-infra-root
   namespace: argocd
 spec:
-  project: agrotech-project
+ 
   source:
     repoURL: https://github.com/eurival/agrotech-ops.git
     targetRevision: HEAD
