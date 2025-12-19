@@ -1,6 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector
 metadata:
+  project: agrotech-project
   name: mqtt-source-agro
   namespace: agrotech
   labels:
