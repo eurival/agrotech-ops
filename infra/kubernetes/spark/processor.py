@@ -10,7 +10,7 @@ spark = SparkSession.builder \
 
 spark.sparkContext.setLogLevel("WARN")
 
-# --- CONFIGURAÇÃO DO BANCO (Usada para Leitura e Escrita) ---
+# --- CONFIGURAÇÃO DO BANCO ---
 db_url = "jdbc:postgresql://postgis-svc:5432/agrotech_db"
 db_props = {
     "user": "agro_admin",
@@ -20,25 +20,26 @@ db_props = {
 }
 
 # 2. CARREGAR TABELA DE DISPOSITIVOS (LOOKUP)
-# Carregamos isso em memória para converter MAC -> ID
-# Dica: Em produção, se devices novos entram toda hora, ideal recarregar isso periodicamente ou usar um micro-batch trigger.
 df_dispositivos = spark.read.jdbc(url=db_url, table="dispositivo", properties=db_props) \
     .select(col("identificador_mac").alias("mac_lookup"), col("id").alias("device_id_found"))
 
-# Otimização: Cachear tabela pequena para não bater no banco a cada batch
 df_dispositivos.cache()
 
-# 3. Schemas (Firmware Profissional)
+# 3. Schemas (ATUALIZADO PARA MODELO EMPRESA -> UNIDADE)
 dados_adicionais_schema = StructType([
     StructField("ip", StringType(), True),
     StructField("rssi", IntegerType(), True),
     StructField("status", StringType(), True),
-    StructField("cliente", StringType(), True),
-    StructField("local", StringType(), True)
+    # --- MUDANÇA AQUI ---
+    # Antes: cliente, local
+    # Agora: empresa, unidade
+    StructField("empresa", StringType(), True), 
+    StructField("unidade", StringType(), True)
+    # --------------------
 ])
 
 schema = StructType([
-    StructField("mac", StringType(), True), # MAC vem na raiz
+    StructField("mac", StringType(), True), 
     StructField("temperatura", FloatType(), True),
     StructField("umidade", FloatType(), True),
     StructField("latitude", FloatType(), True),
@@ -57,10 +58,9 @@ df_raw = spark.readStream \
 # 5. Transformação
 df_parsed = df_raw.selectExpr("CAST(value AS STRING)") \
     .select(from_json(col("value"), schema).alias("data")) \
-    .select("data.*") # "Explode" a struct para colunas: mac, temperatura, dadosAdicionais...
+    .select("data.*") 
 
-# 6. ENRIQUECIMENTO (JOIN COM DISPOSITIVO)
-# Fazemos um Left Join pelo MAC. Se não achar, device_id_found será null.
+# 6. ENRIQUECIMENTO
 df_enriched = df_parsed.join(df_dispositivos, df_parsed.mac == df_dispositivos.mac_lookup, "left")
 
 # 7. Preparação Final
@@ -69,26 +69,21 @@ df_final = df_enriched.select(
     col("umidade"),
     col("latitude"),
     col("longitude"),
-    col("device_id_found").alias("dispositivo_id"), # <-- AQUI ESTA A MAGIA
+    col("device_id_found").alias("dispositivo_id"), 
     current_timestamp().alias("data_hora"),
     
-    # Truque: Vamos injetar o MAC original dentro do JSONB também, 
-    # caso o dispositivo_id seja null (segurança para auditoria)
+    # Grava o JSONB no banco
     to_json(struct(
         col("mac"), 
-        col("dadosAdicionais.*")
+        col("dadosAdicionais.*") # O '*' pega automaticamente 'empresa' e 'unidade' do schema novo
     )).alias("dados_adicionais")
 )
 
-# Filtro de segurança
 df_final = df_final.filter(col("temperatura").isNotNull())
 
 # 8. Escrita no PostgreSQL
 def write_to_postgres(batch_df, batch_id):
-    # Persistência
     try:
-        # Se device_id for nulo, o banco pode reclamar se a coluna for NOT NULL.
-        # Caso seja nullable, vai entrar como "sem dono".
         batch_df.write \
             .jdbc(url=db_url, table="telemetria", mode="append", properties=db_props)
         print(f"Batch {batch_id}: {batch_df.count()} registros processados.")
