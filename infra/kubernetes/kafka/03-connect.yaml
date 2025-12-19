@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1
+apiVersion: kafka.strimzi.io/v1  # <--- MUDANÇA CRUCIAL: Agora usamos v1
 kind: KafkaConnect
 metadata:
   name: agro-connect
@@ -6,12 +6,10 @@ metadata:
   annotations:
     strimzi.io/use-connector-resources: "true"
 spec:
-  version: 4.1.1 # Alinhado com o cluster
+  version: 4.1.1 # Mantendo a mesma versão que você definiu no Kafka
   replicas: 1
-  
   bootstrapServers: agro-cluster-kafka-bootstrap:9092
   
-  # IMAGEM 9.1 (A mais recente que você subiu)
   image: eurival/agro-connect-mqtt:9.1
 
   resources:
@@ -23,13 +21,12 @@ spec:
       cpu: 1000m
   
   config:
+    # Configurações do Worker
     bootstrap.servers: agro-cluster-kafka-bootstrap:9092
-    
     group.id: connect-cluster
     offset.flush.interval.ms: 10000
     
-    # --- CORREÇÃO DO FATOR DE REPLICAÇÃO ---
-    # Seu cluster só tem 1 broker, então a replicação máxima é 1.
+    # Fator 1 para cluster single-node
     config.storage.replication.factor: 1
     status.storage.replication.factor: 1
     offset.storage.replication.factor: 1
@@ -38,8 +35,7 @@ spec:
     status.storage.topic: connect-cluster-status
     offset.storage.topic: connect-cluster-offsets
     
+    # Conversores (JSON simples para facilitar debug)
     key.converter: org.apache.kafka.connect.storage.StringConverter
     value.converter: org.apache.kafka.connect.json.JsonConverter
     value.converter.schemas.enable: false
-    
-    plugin.path: /opt/kafka/plugins
