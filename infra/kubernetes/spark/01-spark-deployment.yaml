@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  project: agrotech-project
+ 
   name: spark-processor
   namespace: agrotech
   labels:
@@ -34,5 +34,5 @@ spec:
             cpu: "500m"
           limits:
             memory: "2Gi"
-            cpu: "1000m"
+            cpu: "1"
       restartPolicy: Always
