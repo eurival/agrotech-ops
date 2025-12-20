@@ -15,7 +15,8 @@ db_url = "jdbc:postgresql://postgis-svc:5432/agrotech_db"
 db_props = {
     "user": "agro_admin",
     "password": "%%%%%3Filhos32023@@", 
-    "driver": "org.postgresql.Driver"
+    "driver": "org.postgresql.Driver",
+    "stringtype": "unspecified"
 }
 
 print(">>> AGROTECH ETL V3 INICIADO <<<")
