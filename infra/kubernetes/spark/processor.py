@@ -55,7 +55,7 @@ df_grandezas_ids.cache()
 df_raw = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", "agro-cluster-kafka-bootstrap:9092") \
-    .option("subscribe", "telemetria/raw") \
+    .option("subscribe", "telemetria-raw") \
     .option("startingOffsets", "latest") \
     .load()
 

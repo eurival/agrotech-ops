@@ -173,7 +173,7 @@ void loop() {
     json += "}"; 
 
     // 3. Envio (DIAGNÓSTICO)
-    String topico = "telemetria/raw";
+    String topico = "telemetria-raw";
     
     Serial.println("--- TX ---");
     Serial.println(json);
