@@ -15,17 +15,15 @@ spec:
     connect.mqtt.clean: "true"
     connect.mqtt.timeout: "1000"
     
-    # --- O Mapeamento (KCQL) COMPLETO ---
-    # Regra 1: sensores/+/telemetria -> telemetria-raw (Dados do Sensor)
-    # Regra 2: onboarding/novo       -> onboarding-raw (Sensor sem dono)
-    # Regra 3: comandos/#            -> comandos-raw   (REGISTRAR;) <--- ADICIONADO AGORA
-    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria; INSERT INTO onboarding-raw SELECT * FROM onboarding/novo; INSERT INTO comandos-raw SELECT * FROM comandos/#"
+    # --- KCQL COMPLETO (RESTAURADO E CORRIGIDO) ---
+    # 1. Mapeia o NOVO firmware (telemetria/raw) para o SEU tópico (telemetria-raw)
+    # 2. Mantém o legado (sensores/+/telemetria)
+    # 3. Restaura Onboarding e Comandos
+    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM telemetria/raw; INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria; INSERT INTO onboarding-raw SELECT * FROM onboarding/novo; INSERT INTO comandos-raw SELECT * FROM comandos/#"
     
     # --- Conversores ---
-    # Usamos ByteArray para o valor para garantir que o JSON chegue intacto
     key.converter: "org.apache.kafka.connect.storage.StringConverter"
     value.converter: "org.apache.kafka.connect.converters.ByteArrayConverter"
     
-    # --- Logs para Debug ---
     errors.log.enable: "true"
     errors.log.include.messages: "true"
