@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: nfs-vm-storage # <--- AQUI: Forçando o NFS
+  storageClassName: nfs-vm-storage
   resources:
     requests:
       storage: 5Gi
@@ -17,6 +17,9 @@ metadata:
   name: postgis
   namespace: agrotech
 spec:
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: postgis
@@ -25,30 +28,65 @@ spec:
       labels:
         app: postgis
     spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
       - name: postgis
         image: postgis/postgis:15-3.3
+        imagePullPolicy: IfNotPresent
+
+        securityContext:
+          runAsUser: 999
+          runAsGroup: 999
+
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
         - name: POSTGRES_USER
           value: "agro_admin"
-        - name: POSTGRES_PASSWORD
-          value: "%%%%%3Filhos32023@@"
         - name: POSTGRES_DB
           value: "agrotech_db"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgis-secret
+              key: POSTGRES_PASSWORD
+
         ports:
         - containerPort: 5432
+
         resources:
           requests:
             memory: "512Mi"
             cpu: "500m"
+            ephemeral-storage: "200Mi"
           limits:
             memory: "2Gi"
             cpu: "1000m"
+            ephemeral-storage: "2Gi"
+
+        readinessProbe:
+          exec:
+            command: ["bash", "-lc", "pg_isready -U agro_admin -d agrotech_db -h 127.0.0.1 -p 5432"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+
+        livenessProbe:
+          exec:
+            command: ["bash", "-lc", "pg_isready -U agro_admin -d agrotech_db -h 127.0.0.1 -p 5432"]
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 6
+
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgis-storage
+
       volumes:
       - name: postgis-storage
         persistentVolumeClaim:
