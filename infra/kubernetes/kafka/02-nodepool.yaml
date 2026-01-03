@@ -16,5 +16,5 @@ spec:
       - id: 0
         type: persistent-claim
         size: 10Gi
-        class: nfs-vm-storage 
+        class: nfs-vm-storage-retain-v3
         deleteClaim: false
