@@ -4,26 +4,20 @@ metadata:
   name: mqtt-source-agro
   namespace: agrotech
   labels:
-    strimzi.io/cluster: agro-connect
+    strimzi.io/cluster: agro-connect # O nome do seu KafkaConnect
 spec:
   class: io.lenses.streamreactor.connect.mqtt.source.MqttSourceConnector
   tasksMax: 1
   config:
-    # --- Conexão MQTT ---
     connect.mqtt.hosts: "tcp://mosquitto-svc:1883"
     connect.mqtt.service.quality: "1"
     connect.mqtt.clean: "true"
     connect.mqtt.timeout: "1000"
+    # Note o uso de aspas e a separação clara por ponto e vírgula
+    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM telemetria/raw; INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria; INSERT INTO onboarding-raw SELECT * FROM onboarding/novo; INSERT INTO comandos-raw SELECT * FROM comandos/+"
+    # DICA: Troquei o '#' por '+' no comandos/ para testar, pois o '+' costuma ser mais aceito em algumas versões do parser se o '#' falhar.
     
-    # --- KCQL COMPLETO (RESTAURADO E CORRIGIDO) ---
-    # 1. Mapeia o NOVO firmware (telemetria/raw) para o SEU tópico (telemetria-raw)
-    # 2. Mantém o legado (sensores/+/telemetria)
-    # 3. Restaura Onboarding e Comandos
-    connect.mqtt.kcql: "INSERT INTO telemetria-raw SELECT * FROM telemetria/raw; INSERT INTO telemetria-raw SELECT * FROM sensores/+/telemetria; INSERT INTO onboarding-raw SELECT * FROM onboarding/novo; INSERT INTO comandos-raw SELECT * FROM comandos/#"
-    
-    # --- Conversores ---
     key.converter: "org.apache.kafka.connect.storage.StringConverter"
     value.converter: "org.apache.kafka.connect.converters.ByteArrayConverter"
-    
     errors.log.enable: "true"
     errors.log.include.messages: "true"
