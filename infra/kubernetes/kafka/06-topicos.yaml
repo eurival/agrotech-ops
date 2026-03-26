@@ -1,0 +1,21 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: telemetria-raw
+  namespace: agrotech
+  labels:
+    strimzi.io/cluster: agro-cluster
+spec:
+  partitions: 1
+  replicas: 1
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: onboarding-raw
+  namespace: agrotech
+  labels:
+    strimzi.io/cluster: agro-cluster
+spec:
+  partitions: 1
+  replicas: 1

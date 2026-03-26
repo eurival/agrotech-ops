@@ -9,7 +9,7 @@ spec:
   storageClassName: nfs-vm-storage
   resources:
     requests:
-      storage: 5Gi
+      storage: 50Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -34,8 +34,8 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
       - name: postgis
-        image: postgis/postgis:15-3.3
-        imagePullPolicy: IfNotPresent
+        image: eurival/postgis-agrotech:15-3.3-vector
+        imagePullPolicy: Always
 
         securityContext:
           runAsUser: 999
