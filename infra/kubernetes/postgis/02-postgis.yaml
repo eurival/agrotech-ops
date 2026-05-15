@@ -67,13 +67,17 @@ spec:
           
           # --- REPLICAÇÃO ---
           - "-c"
-          - "max_wal_size=4GB"            
+          - "max_wal_size=4GB"     
+          - "-c"
+          - "log_timezone=America/Sao_Paulo"       
 
         securityContext:
           runAsUser: 999
           runAsGroup: 999
 
         env:
+        - name: TZ
+          value: "America/Sao_Paulo"
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
         - name: POSTGRES_USER
