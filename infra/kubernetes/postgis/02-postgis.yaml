@@ -9,7 +9,7 @@ spec:
   storageClassName: nfs-vm-storage
   resources:
     requests:
-      storage: 50Gi
+      storage: 80Gi # 🔥 ATUALIZADO: Igualado com a realidade do Longhorn para o ArgoCD não reclamar
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -28,7 +28,7 @@ spec:
       labels:
         app: postgis
     spec:
-      terminationGracePeriodSeconds: 60
+      terminationGracePeriodSeconds: 120 
       securityContext:
         fsGroup: 999
         fsGroupChangePolicy: "OnRootMismatch"
@@ -36,6 +36,38 @@ spec:
       - name: postgis
         image: eurival/postgis-agrotech:15-3.3-vector
         imagePullPolicy: Always
+
+        # =========================================================
+        # 🔥 TUNING EXTREMO POSTGIS + FTS (24 Cores + NVMe)
+        # =========================================================
+        args:
+          # --- MEMÓRIA (O Cache) ---
+          - "-c"
+          - "shared_buffers=4GB"          # Índice FTS inteiro na memória
+          - "-c"
+          - "work_mem=128MB"              # FTS pesado não vai usar disco
+          - "-c"
+          - "maintenance_work_mem=1GB"    # 1GB para fazer o REINDEX voar
+          - "-c"
+          - "effective_cache_size=12GB"   # Avisa ao K8s para usar a RAM livre
+          
+          # --- DISCO (NVMe + Longhorn Local) ---
+          - "-c"
+          - "random_page_cost=1.1"        # Força o uso do índice GIN
+          - "-c"
+          - "effective_io_concurrency=200"# Tira proveito do paralelismo do NVMe
+          
+          # --- CPU (O Poder dos 24 Núcleos) ---
+          - "-c"
+          - "max_worker_processes=16"         # Limite total de workers
+          - "-c"
+          - "max_parallel_workers=8"          # Workers liberados em background
+          - "-c"
+          - "max_parallel_workers_per_gather=4" # 4 Núcleos quebrando a MESMA query de FTS simultaneamente!
+          
+          # --- REPLICAÇÃO ---
+          - "-c"
+          - "max_wal_size=4GB"            
 
         securityContext:
           runAsUser: 999
@@ -57,14 +89,17 @@ spec:
         ports:
         - containerPort: 5432
 
+        # =========================================================
+        # 🛡️ RECURSOS (QoS Ajustado para IA/GIS/FTS)
+        # =========================================================
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "500m"
-            ephemeral-storage: "200Mi"
+            memory: "8Gi"    # 🔥 ATUALIZADO: Fôlego garantido
+            cpu: "4000m"     # 🔥 ATUALIZADO: 4 Cores dedicados na base
+            ephemeral-storage: "1Gi"
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "16Gi"   # 🔥 ATUALIZADO: Teto alto para evitar OOMKilled
+            cpu: "12000m"    # 🔥 ATUALIZADO: Até 12 Cores no pico de FTS
             ephemeral-storage: "2Gi"
 
         readinessProbe:
