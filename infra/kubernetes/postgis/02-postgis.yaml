@@ -121,11 +121,17 @@ spec:
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: postgis-storage
+        - mountPath: /dev/shm
+          name: dshm
 
       volumes:
       - name: postgis-storage
         persistentVolumeClaim:
           claimName: postgis-pvc
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
 ---
 apiVersion: v1
 kind: Service
