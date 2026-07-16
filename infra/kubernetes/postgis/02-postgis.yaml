@@ -98,11 +98,11 @@ spec:
         # =========================================================
         resources:
           requests:
-            memory: "8Gi"    # 🔥 ATUALIZADO: Fôlego garantido
+            memory: "12Gi"    # 🔥 ATUALIZADO: Fôlego garantido
             cpu: "4000m"     # 🔥 ATUALIZADO: 4 Cores dedicados na base
             ephemeral-storage: "1Gi"
           limits:
-            memory: "16Gi"   # 🔥 ATUALIZADO: Teto alto para evitar OOMKilled
+            memory: "24Gi"   # 🔥 ATUALIZADO: Teto alto para evitar OOMKilled
             cpu: "12000m"    # 🔥 ATUALIZADO: Até 12 Cores no pico de FTS
             ephemeral-storage: "2Gi"
 
