@@ -40,37 +40,55 @@ spec:
         # =========================================================
         # 🔥 TUNING EXTREMO POSTGIS + FTS (24 Cores + NVMe)
         # =========================================================
+ 
         args:
-          # --- MEMÓRIA (O Cache) ---
+          # --- MEMÓRIA ---
           - "-c"
-          - "shared_buffers=4GB"          # Índice FTS inteiro na memória
+          - "shared_buffers=4GB"
           - "-c"
-          - "work_mem=128MB"              # FTS pesado não vai usar disco
+          - "work_mem=32MB"
           - "-c"
-          - "maintenance_work_mem=1GB"    # 1GB para fazer o REINDEX voar
+          - "maintenance_work_mem=1GB"
           - "-c"
-          - "effective_cache_size=12GB"   # Avisa ao K8s para usar a RAM livre
-          
-          # --- DISCO (NVMe + Longhorn Local) ---
+          - "autovacuum_work_mem=256MB"
           - "-c"
-          - "random_page_cost=1.1"        # Força o uso do índice GIN
-          - "-c"
-          - "effective_io_concurrency=200"# Tira proveito do paralelismo do NVMe
-          
-          # --- CPU (O Poder dos 24 Núcleos) ---
-          - "-c"
-          - "max_worker_processes=16"         # Limite total de workers
-          - "-c"
-          - "max_parallel_workers=8"          # Workers liberados em background
-          - "-c"
-          - "max_parallel_workers_per_gather=4" # 4 Núcleos quebrando a MESMA query de FTS simultaneamente!
-          
-          # --- REPLICAÇÃO ---
-          - "-c"
-          - "max_wal_size=4GB"     
-          - "-c"
-          - "log_timezone=America/Sao_Paulo"       
+          - "effective_cache_size=12GB"
 
+          # --- DISCO E PLANNER ---
+          - "-c"
+          - "random_page_cost=1.1"
+          - "-c"
+          - "effective_io_concurrency=200"
+
+          # --- PARALELISMO ---
+          - "-c"
+          - "max_worker_processes=16"
+          - "-c"
+          - "max_parallel_workers=8"
+          - "-c"
+          - "max_parallel_workers_per_gather=4"
+
+          # --- WAL E CHECKPOINTS ---
+          - "-c"
+          - "max_wal_size=4GB"
+
+          # --- MONITORAMENTO ---
+          - "-c"
+          - "shared_preload_libraries=pg_stat_statements"
+          - "-c"
+          - "pg_stat_statements.track=all"
+          - "-c"
+          - "pg_stat_statements.max=10000"
+          - "-c"
+          - "pg_stat_statements.save=on"
+          - "-c"
+          - "track_io_timing=on"
+          - "-c"
+          - "track_activity_query_size=4096"
+
+          # --- LOCALIZAÇÃO ---
+          - "-c"
+          - "log_timezone=America/Sao_Paulo"
         securityContext:
           runAsUser: 999
           runAsGroup: 999
